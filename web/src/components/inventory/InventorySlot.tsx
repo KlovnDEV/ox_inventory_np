@@ -7,7 +7,7 @@ import { onDrop } from '../../dnd/onDrop';
 import { onBuy } from '../../dnd/onBuy';
 import { selectIsBusy } from '../../store/inventory';
 import { Items } from '../../store/items';
-import { canCraftItem, isShopStockEmpty, isSlotWithItem } from '../../helpers';
+import { isShopStockEmpty, isSlotWithItem } from '../../helpers';
 import { onUse } from '../../dnd/onUse';
 import { Locale } from '../../store/locale';
 import { Tooltip } from '@mui/material';
@@ -41,7 +41,7 @@ const InventorySlot: React.FC<SlotProps> = ({ inventory, item }) => {
               image: item.metadata?.image,
             }
           : null,
-          canDrag: !isBusy && !isShopStockEmpty(item.count, inventory.type) && canCraftItem(item, inventory.type),
+          canDrag: !isBusy && !isShopStockEmpty(item.count, inventory.type),
     }),
     [isBusy, inventory, item]
   );
@@ -97,7 +97,7 @@ const InventorySlot: React.FC<SlotProps> = ({ inventory, item }) => {
 
   return (
     <Tooltip
-      title={!isSlotWithItem(item) || isOver || isDragging ? '' : <SlotTooltip item={item} inventory={inventory} />}
+      title={!isSlotWithItem(item) || isOver || isDragging ? '' : <SlotTooltip item={item} />}
       sx={(theme) => ({ fontFamily: theme.typography.fontFamily })}
       disableInteractive
       followCursor

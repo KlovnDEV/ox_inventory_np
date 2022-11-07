@@ -27,7 +27,7 @@ debugData([
         items: [
           {
             slot: 1,
-            name: 'iron',
+            name: 'water',
             weight: 3000,
             metadata: {
               description: `name: Svetozar Miletic  \n Gender: Male`,
@@ -38,8 +38,8 @@ debugData([
             },
             count: 5,
           },
-          { slot: 2, name: 'cocaine', weight: 0, count: 32000 },
-          { slot: 3, name: 'copper', weight: 100, count: 1, metadata: { type: 'Special' } },
+          { slot: 2, name: 'money', weight: 0, count: 32000 },
+          { slot: 3, name: 'cola', weight: 100, count: 1, metadata: { type: 'Special' } },
           {
             slot: 4,
             name: 'water',
@@ -48,32 +48,16 @@ debugData([
             metadata: { description: 'Generic item description' },
           },
           { slot: 5, name: 'water', weight: 100, count: 1 },
-          { slot: 6, name: 'burger', weight: 100, count: 1, metadata: { durability: 100 }, },
         ],
       },
       rightInventory: {
         id: 'shop',
-        type: 'crafting',
+        type: 'shop',
         slots: 50,
         name: 'Bob Smith',
         weight: 3000,
         maxWeight: 5000,
-        items: [
-          {
-            slot: 1,
-            name: 'lockpick',
-            weight: 500,
-            price: 300,
-            ingredients: {
-              iron: 5,
-              copper: 12,
-              cocaine: 0,
-            },
-            metadata: {
-              description: 'Body armour that stops small caliber bullets',
-            },
-          },
-        ],
+        items: [{ slot: 1, name: 'water', weight: 500, price: 300 }],
       },
     },
   },

@@ -70,10 +70,6 @@ input[type='number']::-webkit-outer-spin-button {
   font-size: 16px !important;
 }
 
-.tooltip-description {
-  padding-top: 5px;
-}
-
 .tooltip-markdown > p {
   margin: 0;
 }
@@ -336,21 +332,6 @@ button:active {
   p {
     font-size: 15px;
     font-weight: 400;
-  }
-}
-
-.tooltip-ingredients {
-  padding-top: 5px;
-}
-
-.tooltip-ingredient {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  img {
-    width: 28px;
-    height: 28px;
-    padding-right: 5px;
   }
 }
 
