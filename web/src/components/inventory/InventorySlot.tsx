@@ -7,7 +7,7 @@ import { onDrop } from '../../dnd/onDrop';
 import { onBuy } from '../../dnd/onBuy';
 import { selectIsBusy } from '../../store/inventory';
 import { Items } from '../../store/items';
-import { isShopStockEmpty, isSlotWithItem } from '../../helpers';
+import { canCraftItem, isShopStockEmpty, isSlotWithItem } from '../../helpers';
 import { onUse } from '../../dnd/onUse';
 import { Locale } from '../../store/locale';
 import { Tooltip } from '@mui/material';
@@ -41,7 +41,7 @@ const InventorySlot: React.FC<SlotProps> = ({ inventory, item }) => {
               image: item.metadata?.image,
             }
           : null,
-      canDrag: !isBusy && !isShopStockEmpty(item.count, inventory.type),
+          canDrag: !isBusy && !isShopStockEmpty(item.count, inventory.type) && canCraftItem(item, inventory.type),
     }),
     [isBusy, inventory, item]
   );
@@ -97,7 +97,7 @@ const InventorySlot: React.FC<SlotProps> = ({ inventory, item }) => {
 
   return (
     <Tooltip
-      title={!isSlotWithItem(item) || isOver || isDragging ? '' : <SlotTooltip item={item} />}
+      title={!isSlotWithItem(item) || isOver || isDragging ? '' : <SlotTooltip item={item} inventory={inventory} />}
       sx={(theme) => ({ fontFamily: theme.typography.fontFamily })}
       disableInteractive
       followCursor
@@ -126,28 +126,17 @@ const InventorySlot: React.FC<SlotProps> = ({ inventory, item }) => {
               className="item-slot-header-wrapper"
               style={{ justifyContent: inventory.type === 'player' && item.slot <= 5 ? 'space-between' : 'flex-end' }}
             >
-              {inventory.type === 'player' && item.slot <= 5 && (
+              <div className="inventory-slot-label-box">
+                <div className="inventory-slot-label-text">
+                  {item.metadata?.label ? item.metadata.label : Items[item.name]?.label || item.name}
+                </div>
+              </div>
+              
+            </div>
+            {inventory.type === 'player' && item.slot <= 5 && (
                 <div className="inventory-slot-number">{item.slot}</div>
               )}
-              <div className="item-slot-info-wrapper">
-                <p>
-                  {item.weight > 0
-                    ? item.weight >= 1000
-                      ? `${(item.weight / 1000).toLocaleString('en-us', {
-                          minimumFractionDigits: 2,
-                        })}kg `
-                      : `${item.weight.toLocaleString('en-us', {
-                          minimumFractionDigits: 0,
-                        })}g `
-                    : ''}
-                </p>
-                <p>{item.count ? item.count.toLocaleString('en-us') + `x` : ''}</p>
-              </div>
-            </div>
             <div>
-              {inventory.type !== 'shop' && item?.durability !== undefined && (
-                <WeightBar percent={item.durability} durability />
-              )}
               {inventory.type === 'shop' && item?.price !== undefined && (
                 <>
                   {item?.currency !== 'money' &&
@@ -185,11 +174,23 @@ const InventorySlot: React.FC<SlotProps> = ({ inventory, item }) => {
                   )}
                 </>
               )}
-              <div className="inventory-slot-label-box">
-                <div className="inventory-slot-label-text">
-                  {item.metadata?.label ? item.metadata.label : Items[item.name]?.label || item.name}
-                </div>
+              <div className="item-slot-info-wrapper">
+                <p>{item.count ? item.count.toLocaleString('en-us') + `x` : ''}</p>
+                <p>
+                  {item.weight > 0
+                    ? item.weight >= 1000
+                      ? `${(item.weight / 1000).toLocaleString('en-us', {
+                          minimumFractionDigits: 2,
+                        })}kg `
+                      : `${item.weight.toLocaleString('en-us', {
+                          minimumFractionDigits: 0,
+                        })}g `
+                    : ''}
+                </p>
               </div>
+              <p>{inventory.type !== 'shop' && item?.durability !== undefined && (
+                <WeightBar percent={item.durability} durability />
+              )}</p>
             </div>
           </div>
         )}
