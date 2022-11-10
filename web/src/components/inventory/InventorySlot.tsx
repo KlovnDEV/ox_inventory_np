@@ -131,6 +131,20 @@ const InventorySlot: React.FC<SlotProps> = ({ inventory, item }) => {
             </div>
             {inventory.type === 'player' && item.slot <= 5 && <div className="inventory-slot-number">{item.slot}</div>}
             <div>
+              <div className="item-slot-info-wrapper">
+                <p>{item.count ? item.count.toLocaleString('en-us') + `x` : ''}</p>
+                <p>
+                  {item.weight > 0
+                    ? item.weight >= 1000
+                      ? `${(item.weight / 1000).toLocaleString('en-us', {
+                          minimumFractionDigits: 2,
+                        })}kg `
+                      : `${item.weight.toLocaleString('en-us', {
+                          minimumFractionDigits: 0,
+                        })}g `
+                    : ''}
+                </p>
+              </div>
               {inventory.type === 'shop' && item?.price !== undefined && (
                 <>
                   {item?.currency !== 'money' &&
@@ -168,20 +182,6 @@ const InventorySlot: React.FC<SlotProps> = ({ inventory, item }) => {
                   )}
                 </>
               )}
-              <div className="item-slot-info-wrapper">
-                <p>{item.count ? item.count.toLocaleString('en-us') + `x` : ''}</p>
-                <p>
-                  {item.weight > 0
-                    ? item.weight >= 1000
-                      ? `${(item.weight / 1000).toLocaleString('en-us', {
-                          minimumFractionDigits: 2,
-                        })}kg `
-                      : `${item.weight.toLocaleString('en-us', {
-                          minimumFractionDigits: 0,
-                        })}g `
-                    : ''}
-                </p>
-              </div>
               <p>
                 {inventory.type !== 'shop' && item?.durability !== undefined && (
                   <WeightBar percent={item.durability} durability />

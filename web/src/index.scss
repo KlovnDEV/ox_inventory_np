@@ -2,14 +2,14 @@ $mainColor: #22232c;
 $textColor: #c1c2c5;
 $mainFont: Roboto;
 
-$secondaryColor: #646475;
+$secondaryColor: #444555;
 $secondaryColorLight: rgba(0, 0, 0, 0.5);
-$secondaryColorDark: #5c5c6c;
+$secondaryColorDark: #3a3b48;
 
 $gridCols: 5;
 $gridRows: 5;
 $gridSize: 13vh;
-$gridGap: 2.5px;
+$gridGap: 3px;
 $containerSize: calc(#{$gridRows} * #{$gridSize + 0.22vh} + #{$gridRows} * #{$gridGap});
 
 body {
@@ -32,7 +32,19 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-::-webkit-scrollbar {
+.inventory-grid-container::-webkit-scrollbar {
+  width: 5px;
+}
+
+.inventory-grid-container::-webkit-scrollbar-track {
+  background: #1114199f;
+}
+
+.inventory-grid-container::-webkit-scrollbar-thumb {
+  background-color: #ffffff25;
+}
+
+.item-notification-container::-webkit-scrollbar {
   display: none;
 }
 
@@ -110,20 +122,20 @@ button:active {
     gap: 6px;
     justify-content: center;
     align-items: center;
-    background-color: rgb(36 34 56 / 80%);
-    padding: 8px;
+    background-color: rgba(34, 35, 51, 0.8);
+    padding: 1rem;
   }
 
   .inventory-control-input {
     transition: 200ms;
-    padding: 16px 8px;
-    border-radius: 0.25vh;
+    padding: 0.4rem 0;
+    height: 3.5vh;
     font-family: $mainFont;
-    font-size: 16px;
+    font-size: 1.4vh;
     text-align: center;
     outline: none;
     border: none;
-    color: #fff;
+    color: rgba(220, 220, 220, 1);
     background-color: $secondaryColor;
     &:focus-within {
       background-color: $secondaryColorDark;
@@ -132,15 +144,15 @@ button:active {
 
   .inventory-control-button {
     font-size: 14px;
-    color: #fff;
+    color: rgba(220, 220, 220, 1);
     background-color: $secondaryColor;
     transition: 200ms;
-    padding: 15px 8px;
+    height: 3.65em;
     border: none;
-    text-transform: uppercase;
+    text-transform: capitalize;
     font-family: $mainFont;
     width: 100%;
-    font-weight: 500;
+    // font-weight: 500;
     &:hover {
       background-color: $secondaryColorDark;
     }
@@ -194,8 +206,8 @@ button:active {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background-color: rgb(35 34 56 / 80%);
-  padding: 18px;
+  background-color: rgba(34, 35, 51, 0.8);
+  padding: 2.1vh;
 }
 .inventory-grid-header-wrapper {
   display: flex;
@@ -214,16 +226,14 @@ button:active {
 
 // inventory slots
 .inventory-slot {
-  background-color: rgb(102 102 113 / 30%);
+  background-color: rgba(255, 255, 255, 0.05);
   background-repeat: no-repeat;
   background-position: center;
   image-rendering: -webkit-optimize-contrast;
   position: relative;
   background-size: 7vh;
   color: $textColor;
-  border-color: rgba(255, 255, 255, 0.02);
-  border-style: solid;
-  border-width: 1px;
+  box-shadow: inset -1px 0px 1px rgb(255 255 255 / 4%), inset 0px 0px 6px rgb(255 255 255 / 3%);
 }
 
 .inventory-slot-label-box {
@@ -237,23 +247,28 @@ button:active {
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: left;
-  padding: 2px 3px;
-  font-weight: 400;
+  padding: 5px 5px;
+  top: 5%;
+  left: 5%;
+  color: #fff;
   font-family: $mainFont;
-  font-size: 12px;
+  font-weight: 300;
+  font-size: 1.25vh;
 }
 
 .inventory-slot-number {
   position: absolute;
-  font-weight: 400;
-  color: rgba(0, 0, 0, 0.15);
-  padding-top: 6vh;
-  padding-bottom: 0px;
-  padding-left: 3.5vh;
-  text-align: left;
-  font-size: 9vh;
-  line-height: 0.5vh;
-  font-family: Roboto, sans-serif !important;
+  color: #000;
+  font-size: 8vh;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 2vh;
+  opacity: 0.15;
+  font-weight: 300;
+  text-align: center;
+  font-family: Roboto;
 }
 
 .item-slot-wrapper {
@@ -280,11 +295,9 @@ button:active {
 }
 
 .item-slot-currency-wrapper {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-  align-items: center;
-  padding-right: 3px;
+  text-align: center;
+  padding: 2% 1%;
+  background-color: #1114199f;
   p {
     font-size: 14px;
     text-shadow: 0.1vh 0.1vh 0 rgba(0, 0, 0, 0.7);
@@ -292,10 +305,9 @@ button:active {
 }
 
 .item-slot-price-wrapper {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-  padding-right: 3px;
+  text-align: center;
+  padding: 2% 1%;
+  background-color: #1114199f;
   p {
     font-size: 14px;
     text-shadow: 0.1vh 0.1vh 0 rgba(0, 0, 0, 0.7);
