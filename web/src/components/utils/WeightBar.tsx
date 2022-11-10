@@ -38,15 +38,15 @@ const WeightBar: React.FC<{ percent: number; durability?: boolean }> = ({ percen
       style={
         durability
           ? {
-            background: 'rgb(39, 39, 49)',
-            height: '6px',
-            overflow: 'hidden',
-          }
-        : {
-            background: 'rgb(39, 39, 49)',
-            height: '0.75em',
-            overflow: 'hidden',
-          }
+              background: 'rgb(39, 39, 49)',
+              height: '6px',
+              overflow: 'hidden',
+            }
+          : {
+              background: 'rgb(39, 39, 49)',
+              height: '0.75em',
+              overflow: 'hidden',
+            }
       }
     >
       <div

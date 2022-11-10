@@ -31,8 +31,8 @@ const InventoryHotbar: React.FC = () => {
           <div
             className="hotbar-item-slot"
             style={{
-              width: '10.42vh',
-              height: '10.42vh',
+              // width: '10.42vh',
+              // height: '10.42vh',
               backgroundImage: `url(${`${imagepath}/${item.metadata?.image ? item.metadata.image : item.name}.png`})`,
             }}
             key={`hotbar-${item.slot}`}
@@ -40,8 +40,16 @@ const InventoryHotbar: React.FC = () => {
             {isSlotWithItem(item) && (
               <div className="item-slot-wrapper">
                 <div className="hotbar-slot-header-wrapper">
-                  <div className="inventory-slot-number">{item.slot}</div>
+                  <div className="inventory-slot-label-box">
+                    <div className="inventory-slot-label-text">
+                      {item.metadata?.label ? item.metadata.label : Items[item.name]?.label || item.name}
+                    </div>
+                  </div>
+                </div>
+                <div className="inventory-slot-number">{item.slot}</div>
+                <div>
                   <div className="item-slot-info-wrapper">
+                    <Typography fontSize={12}>{item.count ? item.count.toLocaleString('en-us') + `x` : ''}</Typography>
                     <Typography fontSize={12}>
                       {item.weight > 0
                         ? item.weight >= 1000
@@ -53,16 +61,8 @@ const InventoryHotbar: React.FC = () => {
                             })}g `
                         : ''}
                     </Typography>
-                    <Typography fontSize={12}>{item.count ? item.count.toLocaleString('en-us') + `x` : ''}</Typography>
                   </div>
-                </div>
-                <div>
-                  {item?.durability !== undefined && <WeightBar percent={item.durability} durability />}
-                  <div className="inventory-slot-label-box">
-                    <div className="inventory-slot-label-text">
-                      {item.metadata?.label ? item.metadata.label : Items[item.name]?.label || item.name}
-                    </div>
-                  </div>
+                  <div>{item?.durability !== undefined && <WeightBar percent={item.durability} durability />}</div>
                 </div>
               </div>
             )}

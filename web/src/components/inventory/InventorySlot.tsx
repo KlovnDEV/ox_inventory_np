@@ -41,7 +41,7 @@ const InventorySlot: React.FC<SlotProps> = ({ inventory, item }) => {
               image: item.metadata?.image,
             }
           : null,
-          canDrag: !isBusy && !isShopStockEmpty(item.count, inventory.type),
+      canDrag: !isBusy && !isShopStockEmpty(item.count, inventory.type),
     }),
     [isBusy, inventory, item]
   );
@@ -122,19 +122,14 @@ const InventorySlot: React.FC<SlotProps> = ({ inventory, item }) => {
       >
         {isSlotWithItem(item) && (
           <div className="item-slot-wrapper">
-            <div
-              className="item-slot-header-wrapper"
-            >
+            <div className="item-slot-header-wrapper">
               <div className="inventory-slot-label-box">
                 <div className="inventory-slot-label-text">
                   {item.metadata?.label ? item.metadata.label : Items[item.name]?.label || item.name}
                 </div>
               </div>
-              
             </div>
-            {inventory.type === 'player' && item.slot <= 5 && (
-                <div className="inventory-slot-number">{item.slot}</div>
-              )}
+            {inventory.type === 'player' && item.slot <= 5 && <div className="inventory-slot-number">{item.slot}</div>}
             <div>
               {inventory.type === 'shop' && item?.price !== undefined && (
                 <>
@@ -187,9 +182,11 @@ const InventorySlot: React.FC<SlotProps> = ({ inventory, item }) => {
                     : ''}
                 </p>
               </div>
-              <p>{inventory.type !== 'shop' && item?.durability !== undefined && (
-                <WeightBar percent={item.durability} durability />
-              )}</p>
+              <p>
+                {inventory.type !== 'shop' && item?.durability !== undefined && (
+                  <WeightBar percent={item.durability} durability />
+                )}
+              </p>
             </div>
           </div>
         )}

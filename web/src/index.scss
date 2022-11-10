@@ -6,7 +6,6 @@ $secondaryColor: #646475;
 $secondaryColorLight: rgba(0, 0, 0, 0.5);
 $secondaryColorDark: #5c5c6c;
 
-
 $gridCols: 5;
 $gridRows: 5;
 $gridSize: 13vh;
@@ -112,7 +111,7 @@ button:active {
     justify-content: center;
     align-items: center;
     background-color: rgb(36 34 56 / 80%);
-    padding: 8px
+    padding: 8px;
   }
 
   .inventory-control-input {
@@ -350,6 +349,7 @@ button:active {
   @extend .inventory-slot;
   width: $gridSize;
   height: $gridSize;
+  background-color: rgba(35, 34, 56, 0.95);
 }
 
 .hotbar-slot-header-wrapper {
@@ -376,7 +376,6 @@ button:active {
 .item-notification-action-box {
   width: 100%;
   color: $textColor;
-  background-color: $secondaryColor;
   text-transform: uppercase;
   text-align: center;
   border-top-left-radius: 0.25vh;
@@ -388,4 +387,6 @@ button:active {
   @extend .inventory-slot;
   height: $gridSize;
   width: $gridSize;
+  background-color: rgba(35, 34, 56, 0.95);
+  border-bottom: 3px solid rgb(15, 255, 213);
 }
