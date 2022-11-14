@@ -34,21 +34,7 @@ const WeightBar: React.FC<{ percent: number; durability?: boolean }> = ({ percen
   );
 
   return (
-    <div
-      style={
-        durability
-          ? {
-              background: '#1114199f',
-              height: '0.5em',
-              overflow: 'hidden',
-            }
-          : {
-              background: '#1114199f',
-              height: '0.5em',
-              overflow: 'hidden',
-            }
-      }
-    >
+    <div className={durability ? 'durability-bar' : 'weight-bar'}>
       <div
         style={{
           visibility: percent > 0 ? 'visible' : 'hidden',

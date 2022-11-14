@@ -81,6 +81,10 @@ input[type='number']::-webkit-outer-spin-button {
   font-size: 16px !important;
 }
 
+.tooltip-description {
+  padding-top: 5px;
+}
+
 .tooltip-markdown > p {
   margin: 0;
 }
@@ -181,7 +185,7 @@ button:active {
   position: absolute !important;
   right: 8px;
   top: 8px;
-  border-radius: 0.25vh !important;
+  border-radius: 2.5% !important;
   color: grey !important;
 }
 
@@ -346,6 +350,34 @@ button:active {
   }
 }
 
+.tooltip-crafting-duration {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  svg {
+    padding-right: 3px;
+  }
+  p {
+    font-size: 14px;
+  }
+}
+
+.tooltip-ingredients {
+  padding-top: 5px;
+}
+
+.tooltip-ingredient {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  img {
+    width: 28px;
+    height: 28px;
+    padding-right: 5px;
+  }
+}
+
 // hotbar
 .hotbar-container {
   display: flex;
@@ -401,4 +433,16 @@ button:active {
   width: $gridSize;
   background-color: rgba(35, 34, 56, 0.95);
   border-bottom: 3px solid rgb(15, 255, 213);
+}
+
+.durability-bar {
+  background: #1114199f;
+  height: 0.5em;
+  overflow: hidden;
+}
+
+.weight-bar {
+  background: #1114199f;
+  height: 0.5em;
+  overflow: hidden;
 }
