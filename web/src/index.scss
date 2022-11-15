@@ -288,6 +288,12 @@ button:active {
 .item-slot-header-wrapper {
   display: flex;
   flex-direction: row;
+  justify-content: flex-end;
+}
+
+.item-hotslot-header-wrapper {
+  @extend .item-slot-header-wrapper;
+  justify-content: space-between !important;
 }
 
 .item-slot-info-wrapper {
@@ -295,7 +301,10 @@ button:active {
   flex-direction: row;
   align-self: flex-end;
   padding: 3px;
-  gap: 75px;
+  gap: 3px;
+  p {
+    font-size: 12px;
+  }
 }
 
 .item-slot-currency-wrapper {

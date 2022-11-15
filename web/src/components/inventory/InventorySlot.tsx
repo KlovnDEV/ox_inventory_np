@@ -134,15 +134,16 @@ const InventorySlot: React.FC<SlotProps> = ({ inventory, item }) => {
       >
         {isSlotWithItem(item) && (
           <div className="item-slot-wrapper">
-            <div className="item-slot-header-wrapper">
-              <div className="inventory-slot-label-box">
-                <div className="inventory-slot-label-text">
-                  {item.metadata?.label ? item.metadata.label : Items[item.name]?.label || item.name}
-                </div>
-              </div>
-            </div>
-            {inventory.type === 'player' && item.slot <= 5 && <div className="inventory-slot-number">{item.slot}</div>}
-            <div>
+            <div
+              className={
+                inventory.type === 'player' && item.slot <= 5
+                  ? 'item-hotslot-header-wrapper'
+                  : 'item-slot-header-wrapper'
+              }
+            >
+              {inventory.type === 'player' && item.slot <= 5 && (
+                <div className="inventory-slot-number">{item.slot}</div>
+              )}
               <div className="item-slot-info-wrapper">
                 <p>{item.count ? item.count.toLocaleString('en-us') + `x` : ''}</p>
                 <p>
