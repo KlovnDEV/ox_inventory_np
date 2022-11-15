@@ -21,7 +21,7 @@ const InventoryGrid: React.FC<{ inventory: Inventory }> = ({ inventory }) => {
             <Typography style={{ fontSize: 16 }}>{inventory.label}</Typography>
             {inventory.maxWeight && (
               <Typography style={{ fontSize: 16 }}>
-                {weight / 1000}/{inventory.maxWeight / 1000}kg
+                {weight / 100}/{inventory.maxWeight / 100}
               </Typography>
             )}
           </div>

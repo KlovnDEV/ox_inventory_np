@@ -43,7 +43,7 @@ const InventoryControl: React.FC = () => {
       <UsefulControls infoVisible={infoVisible} setInfoVisible={setInfoVisible} />
       <div className="inventory-control">
         <div className="inventory-control-wrapper">
-          <input className="inventory-control-input" type="number" defaultValue={itemAmount} onChange={inputHandler} />
+          <input className="inventory-control-input" type="number" placeholder="Amount" onChange={inputHandler} />
           <button className="inventory-control-button" ref={use}>
             {Locale.ui_use || 'Use'}
           </button>

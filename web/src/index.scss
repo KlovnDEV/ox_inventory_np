@@ -6,11 +6,13 @@ $secondaryColor: #444555;
 $secondaryColorLight: rgba(0, 0, 0, 0.5);
 $secondaryColorDark: #3a3b48;
 
+$backgroundColor: rgba(34, 35, 51, 0.8);
+
 $gridCols: 5;
 $gridRows: 5;
-$gridSize: 13vh;
-$gridGap: 3px;
-$containerSize: calc(#{$gridRows} * #{$gridSize + 0.22vh} + #{$gridRows} * #{$gridGap});
+$gridSize: 12.4797vh;
+$gridGap: 0.3vh;
+$containerSize: calc(#{$gridRows} * #{$gridSize} + #{$gridRows} * #{$gridGap});
 
 body {
   margin: 0;
@@ -110,11 +112,9 @@ button:active {
 .inventory-wrapper {
   display: flex;
   flex-direction: row;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  height: 100%;
-
-  gap: 24px;
+  padding: 10% 5%;
 }
 
 .inventory-control {
@@ -122,12 +122,12 @@ button:active {
 
   .inventory-control-wrapper {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-    justify-content: center;
-    align-items: center;
-    background-color: rgba(34, 35, 51, 0.8);
     padding: 1rem;
+    gap: 10px;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    background-color: $backgroundColor;
   }
 
   .inventory-control-input {
@@ -135,28 +135,30 @@ button:active {
     padding: 0.4rem 0;
     height: 3.5vh;
     font-family: $mainFont;
-    font-size: 1.4vh;
+    font-size: 1.5vh;
     text-align: center;
     outline: none;
     border: none;
-    color: rgba(220, 220, 220, 1);
+    color: $textColor;
     background-color: $secondaryColor;
     &:focus-within {
       background-color: $secondaryColorDark;
     }
+    &::placeholder {
+      color: $textColor
+    }
   }
 
   .inventory-control-button {
-    font-size: 14px;
-    color: rgba(220, 220, 220, 1);
-    background-color: $secondaryColor;
     transition: 200ms;
     height: 3.65em;
-    border: none;
-    text-transform: capitalize;
-    font-family: $mainFont;
     width: 100%;
-    // font-weight: 500;
+    font-family: $mainFont;
+    font-size: 1.5vh;
+    outline: none;
+    border: none;
+    color: $textColor;
+    background-color: $secondaryColor;
     &:hover {
       background-color: $secondaryColorDark;
     }
@@ -207,12 +209,14 @@ button:active {
 
 // inventory grids
 .inventory-grid-wrapper {
+  width: 40%;
+  max-height: 65vh;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background-color: rgba(34, 35, 51, 0.8);
   padding: 2.1vh;
+  flex-direction: column;
+  background: $backgroundColor;
 }
+
 .inventory-grid-header-wrapper {
   display: flex;
   flex-direction: row;
@@ -220,10 +224,11 @@ button:active {
 }
 
 .inventory-grid-container {
+  margin-top: 0.2rem;
   display: grid;
   height: $containerSize;
   grid-template-columns: repeat($gridCols, $gridSize);
-  grid-auto-rows: $gridSize + 0.22vh;
+  grid-auto-rows: $gridSize;
   gap: $gridGap;
   overflow-y: scroll;
 }
@@ -241,7 +246,7 @@ button:active {
 }
 
 .inventory-slot-label-box {
-  color: white;
+  color: $textColor;
   text-align: left;
 }
 
@@ -288,7 +293,7 @@ button:active {
 .item-slot-header-wrapper {
   display: flex;
   flex-direction: row;
-  justify-content: flex-end;
+  justify-content: left;
 }
 
 .item-hotslot-header-wrapper {
@@ -300,8 +305,8 @@ button:active {
   display: flex;
   flex-direction: row;
   align-self: flex-end;
+  justify-content: space-between;
   padding: 3px;
-  gap: 3px;
   p {
     font-size: 12px;
   }
@@ -402,7 +407,7 @@ button:active {
   @extend .inventory-slot;
   width: $gridSize;
   height: $gridSize;
-  background-color: rgba(35, 34, 56, 0.95);
+  background-color: $backgroundColor;
 }
 
 .hotbar-slot-header-wrapper {
@@ -440,18 +445,18 @@ button:active {
   @extend .inventory-slot;
   height: $gridSize;
   width: $gridSize;
-  background-color: rgba(35, 34, 56, 0.95);
+  background-color: $backgroundColor;
   border-bottom: 3px solid rgb(15, 255, 213);
 }
 
 .durability-bar {
   background: #1114199f;
-  height: 0.5em;
+  height: 0.4em;
   overflow: hidden;
 }
 
 .weight-bar {
   background: #1114199f;
-  height: 0.5em;
+  height: 0.35em;
   overflow: hidden;
 }
