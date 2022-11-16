@@ -112,9 +112,10 @@ button:active {
 .inventory-wrapper {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  padding: 10% 5%;
+  height: 100%;
+  gap: 24px;
 }
 
 .inventory-control {
@@ -213,7 +214,6 @@ button:active {
 
 // inventory grids
 .inventory-grid-wrapper {
-  width: 40%;
   max-height: 65vh;
   display: flex;
   padding: 2.1vh;
