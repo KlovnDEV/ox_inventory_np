@@ -4,7 +4,6 @@ local Inventory = {}
 local Inventories = {}
 local Vehicles = data 'vehicles'
 local Stashes = data 'stashes'
-
 local GetVehicleNumberPlateText = GetVehicleNumberPlateText
 
 local function loadInventoryData(data, player)
@@ -88,7 +87,7 @@ local function loadInventoryData(data, player)
 
 			if stash.owner then
 				if stash.owner == true then
-					owner = data.owner or player.owner
+					owner = data.owner or player?.owner
 				else
 					owner = stash.owner
 				end
@@ -543,13 +542,10 @@ function Inventory.Load(id, invType, owner)
 		for _, v in pairs(result) do
 			local item = Items(v.name)
 			if item then
-				if v.metadata then
-					v.metadata = Items.CheckMetadata(v.metadata, item, v.name, ostime)
-				end
-
+				v.metadata = Items.CheckMetadata(v.metadata or {}, item, v.name, ostime)
 				local slotWeight = Inventory.SlotWeight(item, v)
 				weight += slotWeight
-				returnData[v.slot] = {name = item.name, label = item.label, weight = slotWeight, slot = v.slot, count = v.count, description = item.description, metadata = v.metadata or {}, stack = item.stack, close = item.close}
+				returnData[v.slot] = {name = item.name, label = item.label, weight = slotWeight, slot = v.slot, count = v.count, description = item.description, metadata = v.metadata, stack = item.stack, close = item.close}
 			end
 		end
 	end
