@@ -88,7 +88,7 @@ lib.callback.register('ox_inventory:craftItem', function(source, id, index, reci
 			end
 
 			local craftedItem = Items(recipe.name)
-			local newWeight = left.weight + (craftedItem.weight + (recipe.metadata.weight or 0)) * (recipe.amount or 1)
+			local newWeight = left.weight + (craftedItem.weight + (recipe.metadata.weight or 0)) * (recipe.count or 1)
 			---@todo new iterator or something to accept a map
 			local items = Inventory.Search(left, 'slots', tbl) or {}
 			table.wipe(tbl)
@@ -104,10 +104,22 @@ lib.callback.register('ox_inventory:craftItem', function(source, id, index, reci
 							break
 						end
 					elseif needs < 1 then
-						---@todo allow stacked items to consume durability (requires splitting stacks)
-						if slot.count == 1 and (not slot.metadata.durability or slot.metadata.durability >= needs * 100) then
-							tbl[slot.slot] = needs
-							break
+						local item = Items(name)
+						local durability = slot.metadata.durability
+
+						if durability and durability >= needs * 100 then
+							if durability > 100 then
+								local degrade = (slot.metadata.degrade or item.degrade) * 60
+								local percentage = ((durability - os.time()) * 100) / degrade
+
+								if percentage >= needs * 100 then
+									tbl[slot.slot] = needs
+									break
+								end
+							else
+								tbl[slot.slot] = needs
+								break
+							end
 						end
 					elseif needs <= slot.count then
 						local itemWeight = slot.weight / slot.count
@@ -141,9 +153,39 @@ lib.callback.register('ox_inventory:craftItem', function(source, id, index, reci
 					local invSlot = left.items[slot]
 
 					if count < 1 then
+						local item = Items(invSlot.name)
 						local durability = invSlot.metadata.durability or 100
-						durability -= count * 100
-						invSlot.metadata.durability = durability
+
+						if durability > 100 then
+							local degrade = (invSlot.metadata.degrade or item.degrade) * 60
+							durability -= degrade * count
+						else
+							durability -= count * 100
+						end
+
+						if invSlot.count > 1 then
+							local emptySlot = Inventory.GetEmptySlot(left)
+
+							if emptySlot then
+								local newItem = Inventory.SetSlot(left, item, 1, table.deepclone(invSlot.metadata), emptySlot)
+
+								if newItem then
+									newItem.metadata.durability = durability < 0 and 0 or durability
+									durability = 0
+
+									TriggerClientEvent('ox_inventory:updateSlots', left.id, {
+										{
+											item = newItem,
+											inventory = left.type
+										}
+									}, { left = left.weight })
+								end
+							end
+
+							invSlot.count -= 1
+						else
+							invSlot.metadata.durability = durability < 0 and 0 or durability
+						end
 
 						TriggerClientEvent('ox_inventory:updateSlots', source, {
 							{
@@ -158,7 +200,7 @@ lib.callback.register('ox_inventory:craftItem', function(source, id, index, reci
 					end
 				end
 
-				Inventory.AddItem(left, craftedItem, recipe.amount or 1, recipe.metadata or {}, toSlot)
+				Inventory.AddItem(left, craftedItem, recipe.count or 1, recipe.metadata or {}, toSlot)
 			end
 
 			return true
