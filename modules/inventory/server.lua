@@ -1057,7 +1057,7 @@ RegisterServerEvent('ox_inventory:removeItem', function(name, count, metadata, s
 	if used then
 		slot = inv.items[inv.usingItem]
 		local item = Items(slot.name)
-		local durability = slot.metadata.durability --[[@as number | false]]
+		local durability = item.consume ~= 0 and item.consume < 1 and slot.metadata.durability --[[@as number | false]]
 
 		if durability then
 			if durability > 100 then
@@ -1146,6 +1146,18 @@ local function dropItem(source, data)
 	local fromData = playerInventory.items[data.fromSlot]
 
 	if not fromData then return end
+
+	if not TriggerEventHooks('swapItems', {
+		source = source,
+		fromInventory = playerInventory.id,
+		fromSlot = fromData,
+		fromType = playerInventory.type,
+		toInventory = 'newdrop',
+		toSlot = data.toSlot,
+		toType = 'drop',
+		count = data.count,
+	}) then return end
+
 	if data.count > fromData.count then data.count = fromData.count end
 
 	local toData = table.clone(fromData)
