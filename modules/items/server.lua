@@ -37,14 +37,18 @@ local trash = {
 	{description = 'An empty chips bag.', weight = 5, image = 'trash_chips'},
 }
 
-local string_lower = string.lower
-
 ---@param _ table?
 ---@param name string?
 ---@return table?
 local function getItem(_, name)
 	if name then
-		return ItemList[string_lower(name)]
+		name = name:lower()
+
+		if name:sub(0, 7) == 'weapon_' then
+			name = name:upper()
+		end
+
+		return ItemList[name]
 	end
 
 	return ItemList
@@ -100,7 +104,7 @@ CreateThread(function()
 				local fileSize = #file
 
 				for _, item in pairs(dump) do
-					local formatName = string_lower(item.name:gsub("'", "\\'"))
+					local formatName = item.name:gsub("'", "\\'"):lower()
 					if not ItemList[formatName] then
 						fileSize += 1
 
@@ -184,7 +188,7 @@ CreateThread(function()
 				local fileSize = #file
 
 				for _, item in pairs(dump) do
-					local formatName = string_lower(item.name:gsub("'", "\\'"))
+					local formatName = item.name:gsub("'", "\\'"):lower()
 					if not ItemList[formatName] then
 						fileSize += 1
 
@@ -346,7 +350,7 @@ function Items.CheckMetadata(metadata, item, name, ostime)
 
 	if metadata.components then
 		if table.type(metadata.components) == 'array' then
-			for i = 1, #metadata.components do
+			for i = #metadata.components, 1, -1 do
 				if not ItemList[metadata.components[i]] then
 					table.remove(metadata.components, i)
 				end
