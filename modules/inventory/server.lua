@@ -648,6 +648,7 @@ function Inventory.SetItem(inv, item, count, metadata)
 		end
 	end
 end
+exports('SetItem', Inventory.SetItem)
 
 ---@param inv table | string | number
 function Inventory.GetCurrentWeapon(inv)
@@ -929,21 +930,32 @@ exports('GetItemSlots', Inventory.GetItemSlots)
 ---@param item table | string
 ---@param count number
 ---@param metadata? table | string
----@param slot number?
+---@param slot? number
+---@param ignoreTotal? boolean
 ---@return boolean? success
-function Inventory.RemoveItem(inv, item, count, metadata, slot)
+function Inventory.RemoveItem(inv, item, count, metadata, slot, ignoreTotal)
 	if type(item) ~= 'table' then item = Items(item) end
 	count = math.floor(count + 0.5)
+
 	if item and count > 0 then
 		inv = Inventory(inv)
+
+		if not inv then return false end
 
 		if type(metadata) ~= 'table' then
 			metadata = metadata and { type = metadata or nil }
 		end
 
 		local itemSlots, totalCount = Inventory.GetItemSlots(inv, item, metadata)
-		if count > totalCount then count = totalCount end
+
+		if count > totalCount then
+			if not ignoreTotal then return false end
+
+			count = totalCount
+		end
+
 		local removed, total, slots = 0, count, {}
+
 		if slot and itemSlots[slot] then
 			removed = count
 			Inventory.SetSlot(inv, item, -count, inv.items[slot].metadata, slot)
@@ -994,6 +1006,8 @@ function Inventory.RemoveItem(inv, item, count, metadata, slot)
 			return true
 		end
 	end
+
+	return false
 end
 exports('RemoveItem', Inventory.RemoveItem)
 
@@ -1003,22 +1017,28 @@ exports('RemoveItem', Inventory.RemoveItem)
 ---@param metadata? table | string
 function Inventory.CanCarryItem(inv, item, count, metadata)
 	if type(item) ~= 'table' then item = Items(item) end
+
 	if item then
 		inv = Inventory(inv)
-		local itemSlots, totalCount, emptySlots = Inventory.GetItemSlots(inv, item, type(metadata) == 'table' and metadata or { type = metadata or nil })
-		local weight = metadata?.weight or item.weight
 
-		if next(itemSlots) or emptySlots > 0 then
-			if weight == 0 then return true end
-			if count == nil then count = 1 end
-			local newWeight = inv.weight + (weight * count)
+		if inv then
+			local itemSlots, _, emptySlots = Inventory.GetItemSlots(inv, item, type(metadata) == 'table' and metadata or { type = metadata or nil })
+			local weight = metadata?.weight or item.weight
 
-			if newWeight > inv.maxWeight then
-				TriggerClientEvent('ox_lib:notify', inv.id, { type = 'error', description = locale('cannot_carry') })
-				return false
+			if next(itemSlots) or emptySlots > 0 then
+				if not count then count = 1 end
+				if not item.stack and emptySlots < count then return false end
+				if weight == 0 then return true end
+
+				local newWeight = inv.weight + (weight * count)
+
+				if newWeight > inv.maxWeight then
+					TriggerClientEvent('ox_lib:notify', inv.id, { type = 'error', description = locale('cannot_carry') })
+					return false
+				end
+
+				return true
 			end
-
-			return true
 		end
 	end
 end
@@ -1036,6 +1056,16 @@ function Inventory.CanCarryAmount(inv, item)
     end
 end
 exports('CanCarryAmount', Inventory.CanCarryAmount)
+
+---@param inv table | string | number
+---@param weight number
+function Inventory.CanCarryWeight(inv, weight)
+	inv = Inventory(inv)
+	local availableWeight = inv.maxWeight - inv.weight
+	local canHold = availableWeight >= weight
+	return canHold, availableWeight
+end
+exports('CanCarryWeight', Inventory.CanCarryWeight)
 
 ---@param inv table | string | number
 ---@param firstItem string
@@ -1807,7 +1837,7 @@ lib.addCommand('group.admin', 'removeitem', function(source, args)
 	args.item = Items(args.item)
 	if args.item and args.count > 0 then
 		local metadata = args.metatype and { type = tonumber(args.metatype) or args.metatype }
-		Inventory.RemoveItem(args.target, args.item.name, args.count, metadata)
+		Inventory.RemoveItem(args.target, args.item.name, args.count, metadata, nil, true)
 
 		local inventory = Inventories[args.target]
 		source = Inventories[source] or {label = 'console', owner = 'console'}
