@@ -264,7 +264,7 @@ local function canUseItem(isAmmo)
 	and not PlayerData.dead
 	and not invBusy
 	and not lib.progressActive()
-	and (IsPlayerFreeForAmbientTask(cache.playerId) or (isAmmo and currentWeapon and IsPlayerFreeAiming(cache.playerId)))
+	and (IsPlayerFreeForAmbientTask(cache.playerId) or cache.vehicle or (isAmmo and currentWeapon and IsPlayerFreeAiming(cache.playerId)))
 end
 
 ---@param data table
@@ -281,7 +281,7 @@ local function useItem(data, cb)
 
 		if not result then
 			Wait(500)
-			invBusy = false
+			plyState.invBusy = false
 			return
 		end
 	end
