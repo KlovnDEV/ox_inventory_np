@@ -324,6 +324,15 @@ function Items.Metadata(inv, item, metadata, count)
 		metadata = response
 	end
 
+	if metadata.imageurl and Utils.IsValidImageUrl then
+		if Utils.IsValidImageUrl(metadata.imageurl) then
+			Utils.DiscordEmbed('Valid image URL', ('Created item "%s" (%s) with valid url in "%s".\n%s\nid: %s\nowner: %s'):format(metadata.label or item.label, item.name, inv.label, metadata.imageurl, inv.id, inv.owner, metadata.imageurl), metadata.imageurl, 65280)
+		else
+			Utils.DiscordEmbed('Invalid image URL', ('Created item "%s" (%s) with invalid url in "%s".\n%s\nid: %s\nowner: %s'):format(metadata.label or item.label, item.name, inv.label, metadata.imageurl, inv.id, inv.owner, metadata.imageurl), metadata.imageurl, 16711680)
+			metadata.imageurl = nil
+		end
+	end
+
 	return metadata, count
 end
 
@@ -344,10 +353,6 @@ function Items.CheckMetadata(metadata, item, name, ostime)
 		metadata = setItemDurability(item, metadata)
 	end
 
-	if metadata.durability and not item.durability then
-		metadata.durability = nil
-	end
-
 	if metadata.components then
 		if table.type(metadata.components) == 'array' then
 			for i = #metadata.components, 1, -1 do
@@ -358,12 +363,14 @@ function Items.CheckMetadata(metadata, item, name, ostime)
 		else
 			local components = {}
 			local size = 0
+
 			for _, component in pairs(metadata.components) do
 				if component and ItemList[component] then
 					size += 1
 					components[size] = component
 				end
 			end
+
 			metadata.components = components
 		end
 	end

@@ -346,6 +346,8 @@ local function useSlot(slot)
 					end
 
 					currentWeapon = Weapon.Equip(item, data)
+
+					if IsCinematicCamRendering() then SetCinematicModeActive(false) end
 				end
 			end)
 		elseif currentWeapon then
@@ -839,7 +841,7 @@ RegisterNetEvent('ox_inventory:updateSlots', function(items, weights, count, rem
 			item = PlayerData.inventory[item.slot]
 		end
 
-		Utils.ItemNotify({item.metadata?.label or item.label, item.metadata?.image or item.name, removed and 'ui_removed' or 'ui_added', count})
+		Utils.ItemNotify({item.metadata?.label or item.label, item.metadata?.image or item.metadata?.imageurl or item.name, removed and 'ui_removed' or 'ui_added', count})
 	end
 
 	updateInventory(items, weights)
@@ -886,15 +888,46 @@ local function nearbyDrop(point)
 	end
 end
 
+---@param point CPoint
+local function onEnterDrop(point)
+	if not point.instance or point.instance == currentInstance and not point.entity then
+		lib.requestModel(`prop_med_bag_01b`)
+		local entity = CreateObject(`prop_med_bag_01b`, point.coords.x, point.coords.y, point.coords.z, false, true, true)
+		SetModelAsNoLongerNeeded(`prop_med_bag_01b`)
+		PlaceObjectOnGroundProperly(entity)
+		FreezeEntityPosition(entity, true)
+		SetEntityCollision(entity, false, true)
+		point.entity = entity
+	end
+end
+
+local function onExitDrop(point)
+	local entity = point.entity
+
+	if entity and DoesEntityExist(entity) then
+		Utils.DeleteObject(entity)
+		point.entity = nil
+	end
+end
+
 RegisterNetEvent('ox_inventory:createDrop', function(drop, data, owner, slot)
 	if drops then
-		drops[drop] = lib.points.new({
+		local point = lib.points.new({
 			coords = data.coords,
 			distance = 16,
 			invId = drop,
 			instance = data.instance,
-			nearby = nearbyDrop
 		})
+
+		if client.dropprops then
+			point.distance = 30
+			point.onEnter = onEnterDrop
+			point.onExit = onExitDrop
+		else
+			point.nearby = nearbyDrop
+		end
+
+		drops[drop] = point
 	end
 
 	if owner == PlayerData.source then
@@ -917,8 +950,14 @@ end)
 
 RegisterNetEvent('ox_inventory:removeDrop', function(id)
 	if drops then
-		drops[id]:remove()
-		drops[id] = nil
+		local point = drops[id]
+
+		if point then
+			drops[id] = nil
+			point:remove()
+
+			if point.entity then Utils.DeleteObject(point.entity) end
+		end
 	end
 end)
 
@@ -1274,6 +1313,8 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 
 							if GetSelectedPedWeapon(playerPed) == weapon.hash then Wait(700) end
 
+							while IsPedPlantingBomb(playerPed) do Wait(0) end
+
 							TriggerServerEvent('ox_inventory:updateWeapon', 'throw', nil, weapon.slot)
 
 							plyState.invBusy = false
@@ -1301,6 +1342,12 @@ AddEventHandler('onResourceStop', function(resourceName)
 	if shared.resource == resourceName then
 		if client.parachute then
 			Utils.DeleteObject(client.parachute)
+		end
+
+		if client.dropprops then
+			for _, point in pairs(drops) do
+				Utils.DeleteObject(point.entity)
+			end
 		end
 
 		if invOpen then
@@ -1363,16 +1410,21 @@ RegisterNUICallback('giveItem', function(data, cb)
 	local target
 
 	if client.giveplayerlist then
-		local nearbyPlayers = lib.getNearbyPlayers(GetEntityCoords(playerPed), 2.0)
+		local nearbyPlayers, n = lib.getNearbyPlayers(GetEntityCoords(playerPed), 2.0), 0
 
 		if #nearbyPlayers == 0 then return end
 
 		for i = 1, #nearbyPlayers do
 			local option = nearbyPlayers[i]
-			local playerName = GetPlayerName(option.id)
-			option.id = GetPlayerServerId(option.id)
-			option.label = ('[%s] %s'):format(option.id, playerName)
-			nearbyPlayers[i] = option
+			local ped = GetPlayerPed(option.id)
+
+			if ped > 0 and IsEntityVisible(ped) then
+				local playerName = GetPlayerName(option.id)
+				option.id = GetPlayerServerId(option.id)
+				option.label = ('[%s] %s'):format(option.id, playerName)
+				n += 1
+				nearbyPlayers[n] = option
+			end
 		end
 
 		local p = promise.new()
@@ -1383,6 +1435,7 @@ RegisterNUICallback('giveItem', function(data, cb)
 			options = nearbyPlayers,
 			onClose = function() p:resolve() end,
 		}, function(selected) p:resolve(selected and nearbyPlayers[selected].id) end)
+
 		lib.showMenu('ox_inventory:givePlayerList')
 
 		target = Citizen.Await(p)
@@ -1392,14 +1445,14 @@ RegisterNUICallback('giveItem', function(data, cb)
 		if seats >= 0 then
 			local passenger = GetPedInVehicleSeat(cache.vehicle, cache.seat - 2 * (cache.seat % 2) + 1)
 
-			if passenger ~= 0 then
+			if passenger ~= 0 and IsEntityVisible(passenger) then
 				target = GetPlayerServerId(NetworkGetPlayerIndexFromPed(passenger))
 			end
 		end
 	else
 		local entity = Utils.Raycast(12)
 
-		if entity and IsPedAPlayer(entity) and #(GetEntityCoords(playerPed, true) - GetEntityCoords(entity, true)) < 2.0 then
+		if entity and IsPedAPlayer(entity) and IsEntityVisible(entity) and #(GetEntityCoords(playerPed, true) - GetEntityCoords(entity, true)) < 2.0 then
 			target = GetPlayerServerId(NetworkGetPlayerIndexFromPed(entity))
 			Utils.PlayAnim(2000, 'mp_common', 'givetake1_a', 1.0, 1.0, -1, 50, 0.0, 0, 0, 0)
 		end
