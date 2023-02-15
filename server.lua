@@ -54,7 +54,7 @@ function server.setPlayerInventory(player, data)
 		inv.player.ped = GetPlayerPed(player.source)
 
 		if server.syncInventory then server.syncInventory(inv) end
-		TriggerClientEvent('ox_inventory:setPlayerInventory', player.source, Inventory.Drops, inventory, totalWeight, inv.player, player.source)
+		TriggerClientEvent('ox_inventory:setPlayerInventory', player.source, Inventory.Drops, inventory, totalWeight, inv.player)
 	end
 end
 exports('setPlayerInventory', server.setPlayerInventory)
@@ -208,7 +208,7 @@ lib.callback.register('ox_inventory:useItem', function(source, itemName, slot, m
 		if not data then return end
 
 		slot = data.slot
-		local durability = data.metadata?.durability
+		local durability = data.metadata?.durability --[[@as number|boolean|nil]]
 		local consume = item.consume
 
 		if durability and consume then
@@ -357,14 +357,14 @@ local function conversionScript()
 end
 
 RegisterCommand('convertinventory', function(source, args)
-	if source ~= 0 then return shared.warning('This command can only be executed with the server console.') end
+	if source ~= 0 then return warn('This command can only be executed with the server console.') end
 	if type(conversionScript) == 'function' then conversionScript() end
 	local arg = args[1]
 
 	local convert = arg and conversionScript[arg]
 
 	if not convert then
-		return shared.info('Invalid conversion argument. Valid options: esx, esxproperty, qb, linden')
+		return warn('Invalid conversion argument. Valid options: esx, esxproperty, qb, linden')
 	end
 
 	CreateThread(convert)
