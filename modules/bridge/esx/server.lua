@@ -2,8 +2,8 @@ local playerDropped = ...
 local Inventory, Items
 
 CreateThread(function()
-	Inventory = server.inventory
-	Items = server.items
+	Inventory = require 'modules.inventory.server'
+	Items = require 'modules.items.server'
 end)
 
 AddEventHandler('esx:playerDropped', playerDropped)
@@ -124,6 +124,13 @@ function server.convertInventory(playerId, items)
 
 		return returnData, totalWeight
 	end
+end
+
+---@diagnostic disable-next-line: duplicate-set-field
+function server.isPlayerBoss(playerId)
+	local xPlayer = ESX.GetPlayerFromId(playerId)
+
+	return xPlayer.job.grade_name == 'boss'
 end
 
 MySQL.ready(function()

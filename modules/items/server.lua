@@ -2,8 +2,7 @@ if not lib then return end
 
 ---@overload fun(name: string): OxServerItem
 local Items = {}
-local ItemList = shared.items
----@cast ItemList { [string]: OxServerItem }
+local ItemList = require 'modules.items.shared' --[[@as { [string]: OxServerItem }]]
 
 TriggerEvent('ox_inventory:itemList', ItemList)
 
@@ -65,7 +64,7 @@ exports('ItemList', function(item) return getItem(nil, item) end)
 local Inventory
 
 CreateThread(function()
-	Inventory = server.inventory
+	Inventory = require 'modules.inventory.server'
 
 	if shared.framework == 'esx' then
 		local success, items = pcall(MySQL.query.await, 'SELECT * FROM items')
@@ -121,8 +120,6 @@ CreateThread(function()
 			end
 
 			shared.info('Database contains', #items, 'items.')
-
-			warn('Some third-party resources may conflict with item and inventory data structure.\n')
 		end
 
 		Wait(500)
@@ -256,6 +253,8 @@ local function setItemDurability(item, metadata)
 
 	return metadata
 end
+
+local TriggerEventHooks = require 'modules.hooks.server'
 
 function Items.Metadata(inv, item, metadata, count)
 	if type(inv) ~= 'table' then inv = Inventory(inv) end
@@ -413,4 +412,4 @@ end
 
 -----------------------------------------------------------------------------------------------
 
-server.items = Items
+return Items

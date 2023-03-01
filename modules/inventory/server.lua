@@ -23,6 +23,8 @@ local Inventory = {}
 ---@field changed? boolean
 ---@field weapon? number
 ---@field containerSlot? number
+---@field player? { source: number, ped: number, groups: table, name?: string, sex?: string, dateofbirth?: string }
+---@field netid? number
 
 ---@alias inventory OxInventory | table | string | number
 
@@ -289,7 +291,7 @@ local Items
 
 CreateThread(function()
 	TriggerEvent('ox_inventory:loadInventory', Inventory)
-	Items = server.items
+	Items = require 'modules.items.server'
 
 	-- Require "set inventory:weaponmismatch 1" to enable experimental weapon checks.
 	-- Maybe need some tweaks, and will definitely need more hashes added to the ignore list.
@@ -1227,7 +1229,7 @@ end)
 
 Inventory.Drops = {}
 
----@param prefix string
+---@param prefix string?
 ---@return string
 local function generateInvId(prefix)
 	while true do
@@ -1279,6 +1281,8 @@ exports('CreateDropFromPlayer', function(playerId)
 	return dropId
 end)
 
+local TriggerEventHooks = require 'modules.hooks.server'
+
 local function dropItem(source, data)
 	local playerInventory = Inventory(source)
 	local fromData = playerInventory.items[data.fromSlot]
@@ -1318,8 +1322,7 @@ local function dropItem(source, data)
 
 	local dropId = generateInvId('drop')
 	local inventory = Inventory.Create(dropId, ('Drop %s'):format(dropId:gsub('%D', '')), 'drop', shared.playerslots, toData.weight, shared.playerweight, false, {[data.toSlot] = toData})
-	local coords = GetEntityCoords(GetPlayerPed(source))
-	inventory.coords = vec3(coords.x, coords.y, coords.z-0.2)
+	inventory.coords = data.coords
 	Inventory.Drops[dropId] = {coords = inventory.coords, instance = data.instance}
 	playerInventory.changed = true
 
@@ -1677,7 +1680,8 @@ exports('ReturnInventory', Inventory.Return)
 ---@param keep? string | string[] an item or list of items to ignore while clearing items
 function Inventory.Clear(inv, keep)
 	inv = Inventory(inv) --[[@as OxInventory]]
-	if not inv then return end
+
+	if not inv or not next(inv.items) then return end
 
 	local updateSlots = inv.player and {}
 	local newWeight = 0
@@ -1811,7 +1815,7 @@ SetInterval(function()
 	db.saveInventories(parameters[1], parameters[2], parameters[3], parameters[4])
 end, 600000)
 
-local function saveInventories(lock)
+function Inventory.SaveInventories(lock)
 	local parameters = { {}, {}, {}, {} }
 	local size = { 0, 0, 0, 0 }
 	Inventory.Lock = lock or nil
@@ -1834,17 +1838,17 @@ end
 
 AddEventHandler('playerDropped', function()
 	if GetNumPlayerIndices() == 0 then
-		saveInventories()
+		Inventory.SaveInventories()
 	end
 end)
 
 AddEventHandler('txAdmin:events:serverShuttingDown', function()
-	saveInventories(true)
+	Inventory.SaveInventories(true)
 end)
 
 AddEventHandler('onResourceStop', function(resource)
 	if resource == shared.resource then
-		saveInventories(true)
+		Inventory.SaveInventories(true)
 	end
 end)
 
@@ -1882,6 +1886,7 @@ RegisterServerEvent('ox_inventory:giveItem', function(slot, target, count)
 			toType = toInventory.type,
 			count = data.count,
 			action = 'give',
+			fromSlot = data,
 		}) then
 			Inventory.RemoveItem(fromInventory, item, count, data.metadata, slot)
 			Inventory.AddItem(toInventory, item, count, data.metadata)
@@ -1895,7 +1900,7 @@ RegisterServerEvent('ox_inventory:giveItem', function(slot, target, count)
 	end
 end)
 
-RegisterServerEvent('ox_inventory:updateWeapon', function(action, value, slot)
+RegisterServerEvent('ox_inventory:updateWeapon', function(action, value, slot, specialAmmo)
 	local inventory = Inventories[source]
 
 	if not inventory then return end
@@ -1936,8 +1941,9 @@ RegisterServerEvent('ox_inventory:updateWeapon', function(action, value, slot)
 				local ammo = Items(weapon.name).ammoname
 				local diff = value - weapon.metadata.ammo
 
-				if Inventory.RemoveItem(inventory, ammo, diff) then
+				if Inventory.RemoveItem(inventory, ammo, diff, specialAmmo) then
 					weapon.metadata.ammo = value
+					weapon.metadata.specialAmmo = specialAmmo
 					weapon.weight = Inventory.SlotWeight(item, weapon)
 				end
 			elseif action == 'throw' then
@@ -1990,7 +1996,7 @@ lib.callback.register('ox_inventory:removeAmmoFromWeapon', function(source, slot
 
 	if not item or not item.ammoname then return end
 
-	if Inventory.AddItem(inventory, item.ammoname, slotData.metadata.ammo) then
+	if Inventory.AddItem(inventory, item.ammoname, slotData.metadata.ammo, { type = slotData.metadata.specialAmmo or nil }) then
 		slotData.metadata.ammo = 0
 		slotData.weight = Inventory.SlotWeight(item, slotData)
 
@@ -2001,111 +2007,6 @@ lib.callback.register('ox_inventory:removeAmmoFromWeapon', function(source, slot
 		return true
 	end
 end)
-
-lib.addCommand('group.admin', {'additem', 'giveitem'}, function(source, args)
-	args.item = Items(args.item)
-	if args.item and args.count > 0 then
-		local metadata = args.metatype and { type = tonumber(args.metatype) or args.metatype }
-		local inventory = Inventories[args.target]
-
-		if not inventory then
-			return print(('No user is connected with the given id (%s)'):format(args.target))
-		end
-
-		if not Inventory.AddItem(inventory, args.item.name, args.count, metadata) then
-			return print(('Failed to give %sx %s to player %s'):format(args.count, args.item.name, args.target))
-		end
-
-		source = Inventories[source] or { label = 'console', owner = 'console' }
-
-		if server.loglevel > 0 then
-			lib.logger(source.owner, 'admin', ('"%s" gave %sx %s to "%s"'):format(source.label, args.count, args.item.name, inventory.label))
-		end
-	end
-end, {'target:number', 'item:string', 'count:number', 'metatype'})
-
-lib.addCommand('group.admin', 'removeitem', function(source, args)
-	args.item = Items(args.item)
-	if args.item and args.count > 0 then
-		local metadata = args.metatype and { type = tonumber(args.metatype) or args.metatype }
-		local inventory = Inventories[args.target]
-
-		if not inventory then
-			return print(('No user is connected with the given id (%s)'):format(args.target))
-		end
-
-		if not Inventory.RemoveItem(inventory, args.item.name, args.count, metadata, nil, true) then
-			return print(('Failed to remove %sx %s from player %s'):format(args.count, args.item.name, args.target))
-		end
-
-		source = Inventories[source] or {label = 'console', owner = 'console'}
-
-		if server.loglevel > 0 then
-			lib.logger(source.owner, 'admin', ('"%s" removed %sx %s from "%s"'):format(source.label, args.count, args.item.name, inventory.label))
-		end
-	end
-end, {'target:number', 'item:string', 'count:number', 'metatype'})
-
-lib.addCommand('group.admin', 'setitem', function(source, args)
-	args.item = Items(args.item)
-	if args.item and args.count >= 0 then
-		local inventory = Inventories[args.target]
-
-		if not inventory then
-			return print(('No user is connected with the given id (%s)'):format(args.target))
-		end
-
-		if not Inventory.SetItem(inventory, args.item.name, args.count, args.metaType) then
-			return print(('Failed to set %s count to %sx for player %s'):format(args.item.name, args.count, args.target))
-		end
-
-		source = Inventories[source] or {label = 'console', owner = 'console'}
-
-		if server.loglevel > 0 then
-			lib.logger(source.owner, 'admin', ('"%s" set "%s" %s count to %sx'):format(source.label, inventory.label, args.item.name, args.count))
-		end
-	end
-end, {'target:number', 'item:string', 'count:number', 'metatype:?string'})
-
-lib.addCommand(false, 'clearevidence', function(source, args)
-	local inventory = Inventories[source]
-	local hasPermission = false
-
-	if shared.framework == 'esx' then
-		-- todo: make it work
-	elseif shared.framework == 'qb' then
-		-- todo: make it work
-	else
-		local group, rank = server.hasGroup(inventory, shared.police)
-		---@diagnostic disable-next-line: undefined-field
-		if group and rank == GlobalState.groups[group] then hasPermission = true end
-	end
-
-	if hasPermission then
-		MySQL.query('DELETE FROM ox_inventory WHERE name = ?', {('evidence-%s'):format(args.evidence)})
-	end
-end, {'evidence:number'})
-
-lib.addCommand('group.admin', 'takeinv', function(source, args)
-	Inventory.Confiscate(args.target)
-end, {'target:number'})
-
-lib.addCommand('group.admin', 'returninv', function(source, args)
-	Inventory.Return(args.target)
-end, {'target:number'})
-
-lib.addCommand('group.admin', 'clearinv', function(source, args)
-	Inventory.Clear(tonumber(args.target) or args.target)
-end, {'target'})
-
-lib.addCommand('group.admin', 'saveinv', function(source, args)
-	saveInventories(args[1] == 1 or args[1] == 'true')
-end)
-
-lib.addCommand('group.admin', 'viewinv', function(source, args)
-	local inventory = Inventories[args.target] or Inventories[tonumber(args.target)]
-	TriggerClientEvent('ox_inventory:viewInventory', source, inventory)
-end, {'target'})
 
 Inventory.accounts = server.accounts
 
@@ -2219,4 +2120,4 @@ end
 
 exports('CreateTemporaryStash', Inventory.CreateTemporaryStash)
 
-server.inventory = Inventory
+return Inventory

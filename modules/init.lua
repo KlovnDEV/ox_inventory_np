@@ -10,6 +10,7 @@ shared = {
 	playerweight = GetConvarInt('inventory:weight', 30000),
 	target = GetConvarInt('inventory:target', 0) == 1,
 	police = json.decode(GetConvar('inventory:police', '["police", "sheriff"]')),
+	ignoreweapons = json.decode(GetConvar('inventory:ignoreweapons', '[]'))
 }
 
 do
@@ -22,7 +23,19 @@ do
 	for i = 1, #shared.police do
 		police[shared.police[i]] = 0
 	end
+
 	shared.police = police
+
+	local ignoreweapons = table.create(0, #shared.ignoreweapons + 3)
+
+	for i = 1, #shared.ignoreweapons do
+		ignoreweapons[shared.ignoreweapons[i]] = true
+	end
+
+	shared.ignoreweapons = ignoreweapons
+	shared.ignoreweapons[`WEAPON_UNARMED`] = true
+	shared.ignoreweapons[`WEAPON_HANDCUFFS`] = true
+	shared.ignoreweapons[`WEAPON_GARBAGEBAG`] = true
 end
 
 if IsDuplicityVersion() then
@@ -134,7 +147,7 @@ local success, msg = lib.checkDependency('oxmysql', '2.4.0')
 
 if not success then return spamError(msg) end
 
-success, msg = lib.checkDependency('ox_lib', '2.19.0')
+success, msg = lib.checkDependency('ox_lib', '3.0.0')
 
 if not success then spamError(msg) end
 
@@ -154,4 +167,9 @@ if shared.target then
 	shared.target = ox_target and 'ox_target' or 'qtarget'
 end
 
-if shared.server then shared.ready = false end
+if lib.context == 'server' then
+	shared.ready = false
+	return require 'server'
+end
+
+require 'client'

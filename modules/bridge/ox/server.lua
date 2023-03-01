@@ -2,7 +2,7 @@ local playerDropped = ...
 local Inventory
 
 CreateThread(function()
-	Inventory = server.inventory
+	Inventory = require 'modules.inventory.server'
 end)
 
 AddEventHandler('ox:playerLogout', playerDropped)
@@ -33,4 +33,11 @@ function server.buyLicense(inv, license)
 	player.addLicense(license.name)
 
 	return true, 'have_purchased'
+end
+
+---@diagnostic disable-next-line: duplicate-set-field
+function server.isPlayerBoss(playerId, group, grade)
+	local groupData = GlobalState[('group.%s'):format(group)]
+
+	return groupData and grade >= groupData.adminGrade
 end
