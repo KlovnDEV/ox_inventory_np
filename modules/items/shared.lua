@@ -61,19 +61,19 @@ local function newItem(data)
 		data.stack = true
 	end
 
-	local client, server = data.client, data.server
-	---@cast client -nil
-	---@cast server -nil
+	local clientData, serverData = data.client, data.server
+	---@cast clientData -nil
+	---@cast serverData -nil
 
-	if not data.consume and (client and (client.status or client.usetime or client.export) or server?.export) then
+	if not data.consume and (clientData and (clientData.status or clientData.usetime or clientData.export) or serverData?.export) then
 		data.consume = 1
 	end
 
 	if isServer then
 		data.client = nil
 
-		if server?.export then
-			data.cb = useExport(string.strsplit('.', server.export))
+		if serverData?.export then
+			data.cb = useExport(string.strsplit('.', serverData.export))
 		end
 
 		if not data.durability then
@@ -85,8 +85,12 @@ local function newItem(data)
 		data.server = nil
 		data.count = 0
 
-		if client?.export then
-			data.export = useExport(string.strsplit('.', client.export))
+		if clientData?.export then
+			data.export = useExport(string.strsplit('.', clientData.export))
+		end
+
+		if clientData?.image then
+			clientData.image = clientData.image:match('^[%w]+://') and ('url(%s)'):format(clientData.image) or ('url(%s/%s)'):format(client.imagepath, clientData.image)
 		end
 	end
 
@@ -103,7 +107,7 @@ for type, data in pairs(data('weapons')) do
 			v.model = v.model or k -- actually weapon type or such? model for compatibility
 			v.hash = joaat(v.model)
 			v.stack = v.throwable and true or false
-			v.durability = v.durability or 1
+			v.durability = v.durability or 0.05
 			v.weapon = true
 		else
 			v.stack = true

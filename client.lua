@@ -117,7 +117,12 @@ function client.openInventory(inv, data)
 			end
 
 			if inv ~= 'drop' and inv ~= 'container' then
-				return client.closeInventory()
+				if (data?.id or data) == currentInventory?.id then
+					-- Triggering exports.ox_inventory:openInventory('stash', 'mystash') twice in rapid succession is weird behaviour
+					return warn(("script tried to open inventory, but it is already open\n%s"):format(Citizen.InvokeNative(`FORMAT_STACK_TRACE` & 0xFFFFFFFF, nil, 0, Citizen.ResultAsString())))
+				else
+					return client.closeInventory()
+				end
 			end
 		end
 	elseif IsNuiFocused() then
@@ -279,6 +284,13 @@ lib.callback.register('ox_inventory:usingItem', function(data)
 			end
 		end
 
+		if not item.disable then
+			item.disable = { combat = true }
+		elseif item.disable.combat == nil then
+			-- Backwards compatibility; you probably don't want people shooting while eating and bandaging anyway
+			item.disable.combat = true
+		end
+
 		local success = (not item.usetime or lib.progressBar({
 			duration = item.usetime,
 			label = item.label or locale('using', data.metadata.label or data.label),
@@ -297,9 +309,6 @@ lib.callback.register('ox_inventory:usingItem', function(data)
 			if item.status then
 				if client.setPlayerStatus then
 					client.setPlayerStatus(item.status)
-				else
-					-- Not ideal, but compatibility and all that
-					return true, { status = item.status }
 				end
 			end
 
@@ -419,10 +428,13 @@ local function useSlot(slot)
 			if data.ammo then
 				if EnableWeaponWheel or currentWeapon.metadata.durability <= 0 then return end
 
-				local maxAmmo = GetMaxAmmoInClip(playerPed, currentWeapon.hash, true)
+				local clipSize = GetMaxAmmoInClip(playerPed, currentWeapon.hash, true)
 				local currentAmmo = GetAmmoInPedWeapon(playerPed, currentWeapon.hash)
+				local _, maxAmmo = GetMaxAmmo(playerPed, currentWeapon.hash)
 
-				if currentAmmo == maxAmmo then return end
+				if maxAmmo < clipSize then clipSize = maxAmmo end
+
+				if currentAmmo == clipSize then return end
 
 				useItem(data, function(resp)
 					if not resp or resp.name ~= currentWeapon?.ammo then return end
@@ -466,10 +478,12 @@ local function useSlot(slot)
 						end
 					end
 
-					maxAmmo = GetMaxAmmoInClip(playerPed, currentWeapon.hash, true)
-					currentAmmo = GetAmmoInPedWeapon(playerPed, currentWeapon.hash)
+					if maxAmmo > clipSize then
+						clipSize = GetMaxAmmoInClip(playerPed, currentWeapon.hash, true)
+					end
 
-					local missingAmmo = maxAmmo - currentAmmo
+					currentAmmo = GetAmmoInPedWeapon(playerPed, currentWeapon.hash)
+					local missingAmmo = clipSize - currentAmmo
 					local addAmmo = resp.count > missingAmmo and missingAmmo or resp.count
 					local newAmmo = currentAmmo + addAmmo
 
@@ -481,6 +495,13 @@ local function useSlot(slot)
 						AddAmmoToPed(playerPed, currentWeapon.hash, addAmmo)
 						Wait(100)
 						MakePedReload(playerPed)
+
+						SetTimeout(100, function()
+							while IsPedReloading(playerPed) do
+								DisableControlAction(0, 22, true)
+								Wait(0)
+							end
+						end)
 					end
 
 					currentWeapon.metadata.ammo = newAmmo
@@ -726,7 +747,7 @@ local function registerCommands()
 					end
 
 					TaskTurnPedToFaceCoord(playerPed, position.x, position.y, position.z, 0)
-				until currentInventory?.id ~= invId or not invOpen
+				until currentInventory?.entity ~= entity or not invOpen
 
 				if invOpen then client.closeInventory() end
 			end
@@ -975,8 +996,8 @@ end
 local function onExitDrop(point)
 	local entity = point.entity
 
-	if entity and DoesEntityExist(entity) then
-		Utils.DeleteObject(entity)
+	if entity then
+		Utils.DeleteEntity(entity)
 		point.entity = nil
 	end
 end
@@ -1032,7 +1053,7 @@ RegisterNetEvent('ox_inventory:removeDrop', function(dropId)
 			client.drops[dropId] = nil
 			point:remove()
 
-			if point.entity then Utils.DeleteObject(point.entity) end
+			if point.entity then Utils.DeleteEntity(point.entity) end
 		end
 	end
 end)
@@ -1049,14 +1070,31 @@ local function setStateBagHandler(stateId)
 		invBusy = value
 
 		if value then
-			lib.disableControls:Add(23, 25, 36, 68, 263)
-		else
-			lib.disableControls:Remove(23, 25, 36, 68, 263)
+			return lib.disableControls:Add(23, 36)
 		end
+
+		lib.disableControls:Remove(23, 36)
 	end)
 
 	AddStateBagChangeHandler('instance', stateId, function(_, _, value)
 		currentInstance = value
+
+		-- Iterate over known drops and remove any points in a different instance (ignoring no instance)
+		for dropId, point in pairs(client.drops) do
+			if point.instance then
+				if point.instance ~= value then
+					if point.entity then
+						Utils.DeleteEntity(point.entity)
+						point.entity = nil
+					end
+
+					point:remove()
+				else
+					-- Recreate the drop using data from the old point
+					createDrop(dropId, point)
+				end
+			end
+		end
 	end)
 
 	AddStateBagChangeHandler('dead', stateId, function(_, _, value)
@@ -1123,6 +1161,7 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 			description = v.description,
 			buttons = buttons,
 			ammoName = v.ammoname,
+			image = v.client?.image
 		}
 	end
 
@@ -1228,7 +1267,7 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 				items = PlayerData.inventory,
 				maxWeight = shared.playerweight,
 			},
-			imagepath = GetConvar('inventory:imagepath', 'nui://ox_inventory/web/images')
+			imagepath = client.imagepath
 		}
 	})
 
@@ -1278,7 +1317,7 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 		end
 
 		if client.parachute and GetPedParachuteState(playerPed) ~= -1 then
-			Utils.DeleteObject(client.parachute)
+			Utils.DeleteEntity(client.parachute)
 			client.parachute = false
 		end
 
@@ -1303,7 +1342,7 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 					currentWeapon = Weapon.Disarm(currentWeapon, true)
 				end
 			end
-		elseif client.weaponmismatch and not shared.ignoreweapons[weaponHash] then
+		elseif client.weaponmismatch and not client.ignoreweapons[weaponHash] then
 			local weaponType = GetWeapontypeGroup(weaponHash)
 
 			if weaponType ~= 0 and weaponType ~= `GROUP_UNARMED` then
@@ -1358,7 +1397,7 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 
 				if currentWeapon.metadata.durability <= 0 then
 					DisablePlayerFiring(playerId, true)
-				elseif client.aimedfiring and not currentWeapon.melee and not IsPlayerFreeAiming(playerId) then
+				elseif client.aimedfiring and not currentWeapon.melee and currentWeapon.group ~= `GROUP_PETROLCAN` and not IsPlayerFreeAiming(playerId) then
 					DisablePlayerFiring(playerId, true)
 				end
 
@@ -1384,9 +1423,10 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 				elseif weaponAmmo then
 					if IsPedShooting(playerPed) then
 						local currentAmmo
+						local durabilityDrain = Items[currentWeapon.name].durability
 
-						if currentWeapon.hash == `WEAPON_PETROLCAN` or currentWeapon.hash == `WEAPON_HAZARDCAN` or currentWeapon.hash == `WEAPON_FERTILIZERCAN` or currentWeapon.hash == `WEAPON_FIREEXTINGUISHER` then
-							currentAmmo = weaponAmmo - 0.05 < 0 and 0 or weaponAmmo - 0.05
+						if currentWeapon.group == `GROUP_PETROLCAN` or currentWeapon.group == `GROUP_FIREEXTINGUISHER` then
+							currentAmmo = weaponAmmo - durabilityDrain < 0 and 0 or weaponAmmo - durabilityDrain
 							currentWeapon.metadata.durability = currentAmmo
 							currentWeapon.metadata.ammo = (weaponAmmo < currentAmmo) and 0 or currentAmmo
 
@@ -1398,10 +1438,8 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 
 							if currentAmmo < weaponAmmo then
 								currentAmmo = (weaponAmmo < currentAmmo) and 0 or currentAmmo
-
-								local durability = Items[currentWeapon.name].durability * math.abs((weaponAmmo or 0.1) - currentAmmo)
 								currentWeapon.metadata.ammo = currentAmmo
-								currentWeapon.metadata.durability = currentWeapon.metadata.durability - durability
+								currentWeapon.metadata.durability = currentWeapon.metadata.durability - (durabilityDrain * math.abs((weaponAmmo or 0.1) - currentAmmo))
 							end
 						end
 
@@ -1475,6 +1513,10 @@ end)
 RegisterNUICallback('uiLoaded', function(_, cb)
 	uiLoaded = true
 	cb(1)
+end)
+
+RegisterNUICallback('getItemData', function(itemName, cb)
+	cb(Items[itemName])
 end)
 
 RegisterNUICallback('removeComponent', function(data, cb)
@@ -1594,7 +1636,7 @@ lib.callback.register('ox_inventory:startCrafting', function(id, recipe)
 	recipe = CraftingBenches[id].items[recipe]
 
 	return lib.progressCircle({
-		label = locale('crafting_item', Items[recipe.name].label),
+		label = locale('crafting_item', recipe.metadata?.label or Items[recipe.name].label),
 		duration = recipe.duration or 3000,
 		canCancel = true,
 		disable = {
@@ -1687,10 +1729,14 @@ RegisterNUICallback('craftItem', function(data, cb)
 	cb(true)
 
 	local id, index = currentInventory.id, currentInventory.index
-	local success, response = lib.callback.await('ox_inventory:craftItem', 200, currentInventory.id, currentInventory.index, data.fromSlot, data.toSlot)
 
-	if not success then
-		lib.notify({ type = 'error', description = locale(response or 'cannot_perform') })
+	for i = 1, data.count do
+		local success, response = lib.callback.await('ox_inventory:craftItem', 200, id, index, data.fromSlot, data.toSlot)
+
+		if not success then
+			if response then lib.notify({ type = 'error', description = locale(response or 'cannot_perform') }) end
+			break
+		end
 	end
 
 	if not currentInventory or currentInventory.type ~= 'crafting' then
