@@ -926,7 +926,7 @@ RegisterNetEvent('ox_inventory:updateSlots', function(items, weights, count, rem
 			item = PlayerData.inventory[item.slot]
 		end
 
-		Utils.ItemNotify({item.metadata?.label or item.label, item.metadata?.image or item.metadata?.imageurl or item.name, removed and 'ui_removed' or 'ui_added', count})
+		Utils.ItemNotify({ item, removed and 'ui_removed' or 'ui_added', count })
 	end
 
 	updateInventory(items, weights)
@@ -1500,6 +1500,7 @@ RegisterNetEvent('ox_inventory:viewInventory', function(data)
 		data.type = 'admin'
 		plyState.invOpen = true
 		currentInventory = data
+
 		SendNUIMessage({
 			action = 'setupInventory',
 			data = {
@@ -1507,6 +1508,8 @@ RegisterNetEvent('ox_inventory:viewInventory', function(data)
 			}
 		})
 		SetNuiFocus(true, true)
+
+		if client.screenblur then TriggerScreenblurFadeIn(0) end
 	end
 end)
 
