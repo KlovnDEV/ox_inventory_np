@@ -130,7 +130,7 @@ function client.openInventory(inv, data)
 		Wait(100)
 
 		if IsNuiFocused() then
-			return warn('Inventory did not open as another resource has NUI Focus.')
+			warn('other scripts have nui focus and may cause issues (e.g. disable focus, prevent input, overlap inventory window)')
 		end
 	end
 
@@ -917,6 +917,10 @@ RegisterNetEvent('ox_inventory:updateSlots', function(items, weights, count, rem
 	local item = items[1]?.item
 
 	if currentWeapon?.slot == item?.slot and item.metadata then
+		-- Potential race condition w/ poor connection may lead to ammo/durability values
+		-- getting desynced or updated out-of-order?
+		item.metadata.ammo = currentWeapon.metadata.ammo
+		item.metadata.durability = currentWeapon.metadata.durability
 		currentWeapon.metadata = item.metadata
 		TriggerEvent('ox_inventory:currentWeapon', currentWeapon)
 	end
@@ -1413,7 +1417,7 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 							local ammo = Inventory.Search(1, currentWeapon.ammo, { type = currentWeapon.metadata.specialAmmo })?[1]
 
 							if ammo then
-								useSlot(ammo.slot)
+								CreateThread(function() useSlot(ammo.slot) end)
 							end
 						end
 					elseif currentWeapon.metadata.durability then

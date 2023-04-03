@@ -1035,7 +1035,7 @@ exports('Search', Inventory.Search)
 function Inventory.GetItemSlots(inv, item, metadata)
 	inv = Inventory(inv) --[[@as OxInventory]]
 
-	if not inv then return end
+	if not inv?.slots then return end
 
 	local totalCount, slots, emptySlots = 0, {}, inv.slots
 
@@ -1062,15 +1062,18 @@ exports('GetItemSlots', Inventory.GetItemSlots)
 ---@param metadata? table | string
 ---@param slot? number
 ---@param ignoreTotal? boolean
----@return boolean? success
+---@return boolean? success, string? response
 function Inventory.RemoveItem(inv, item, count, metadata, slot, ignoreTotal)
 	if type(item) ~= 'table' then item = Items(item) end
+
+	if not item then return false, 'invalid_item' end
+
 	count = math.floor(count + 0.5)
 
-	if item and count > 0 then
+	if count > 0 then
 		inv = Inventory(inv) --[[@as OxInventory]]
 
-		if not inv then return false end
+		if not inv?.slots then return false, 'invalid_inventory' end
 
 		if type(metadata) ~= 'table' then
 			metadata = metadata and { type = metadata or nil }
@@ -1078,10 +1081,10 @@ function Inventory.RemoveItem(inv, item, count, metadata, slot, ignoreTotal)
 
 		local itemSlots, totalCount = Inventory.GetItemSlots(inv, item, metadata)
 
-		if not itemSlots then return end
+		if not itemSlots then return false end
 
 		if totalCount and count > totalCount then
-			if not ignoreTotal then return false end
+			if not ignoreTotal then return false, 'not_enough_items' end
 
 			count = totalCount
 		end
@@ -1141,7 +1144,7 @@ function Inventory.RemoveItem(inv, item, count, metadata, slot, ignoreTotal)
 		end
 	end
 
-	return false
+	return false, 'not_enough_items'
 end
 exports('RemoveItem', Inventory.RemoveItem)
 
@@ -1822,7 +1825,9 @@ SetInterval(function()
 				if NetworkGetEntityFromNetworkId(inv.netid) == 0 then
 					Inventory.Remove(inv)
 				end
-			elseif not inv.player and (inv.datastore or inv.owner) and time - inv.time >= 3000 then
+			elseif not inv.player and (inv.datastore or inv.owner) and time - inv.time >= 1200 then
+				-- inv.time is a timestamp for when the inventory was last closed
+				-- if unopened for n seconds, the inventory is unloaded (datastore/temp stash is deleted)
 				Inventory.Remove(inv)
 			end
 		end
