@@ -1,7 +1,6 @@
 import React, { RefObject, useRef } from 'react';
 import { DragLayerMonitor, useDragLayer, XYCoord } from 'react-dnd';
-import { DragSource, SlotWithItem } from '../../typings';
-import { getItemUrl } from '../../helpers';
+import { DragSource } from '../../typings';
 
 interface DragLayerProps {
   data: DragSource;
@@ -57,7 +56,7 @@ const DragPreview: React.FC = () => {
           ref={element}
           style={{
             transform: `translate(${currentOffset.x}px, ${currentOffset.y}px)`,
-            backgroundImage: getItemUrl(data.item as SlotWithItem) || 'none',
+            backgroundImage: data.image,
           }}
         />
       )}
