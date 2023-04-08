@@ -166,7 +166,9 @@ setmetatable(Inventory, {
 		if not inv then
 			return self
 		elseif type(inv) == 'table' then
-			return inv.items and inv or loadInventoryData(inv, player)
+			if inv.items then return inv end
+
+			return not inv.owner and Inventories[inv.id] or loadInventoryData(inv, player)
 		end
 
 		return Inventories[inv] or loadInventoryData({ id = inv }, player)
@@ -854,6 +856,9 @@ function Inventory.SetMaxWeight(inv, maxWeight)
 	if type(maxWeight) ~= 'number' then return end
 
 	inv.maxWeight = maxWeight
+	if not inv.open then return end
+
+	TriggerClientEvent('refreshMaxWeight', type(inv.open) == 'number' and inv.open or inv.player.source, {inventoryId = inv.id, maxWeight = inv.maxWeight})
 end
 
 exports('SetMaxWeight', Inventory.SetMaxWeight)
